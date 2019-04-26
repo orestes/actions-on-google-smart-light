@@ -103,14 +103,14 @@ void updateDataFromFirebase() {
     setBrightness(event.getInt("data"));
   }
 
-  if (path == "/color" || path == "color/rgb") {    
-    setColor(event.getInt("data/color/rgb/r"), event.getInt("data/color/rgb/g"), event.getInt("data/color/rgb/b"));
+  if (path == "/color") {    
+    setColor(event.getInt("data/rgb/r"), event.getInt("data/rgb/g"), event.getInt("data/rgb/b"));
   }
 }
 
 void setOn(bool value) {
   on = value;
-  if (value) {
+  if (on) {
     Serial.println("Turn light ON");
   } else {
     Serial.println("Turn light OFF");
@@ -119,7 +119,7 @@ void setOn(bool value) {
 void setBrightness(int value) {
   i = map(value, 0, 100, 0, 255);
   Serial.print("Set brightness to: ");
-  Serial.println(value);
+  Serial.println(i);
 }
 void setColor(int red, int green, int blue) {
   r = constrain(red, 0, 255);
@@ -127,9 +127,9 @@ void setColor(int red, int green, int blue) {
   b = constrain(blue, 0, 255);
 
   Serial.print("Set R to: ");
-  Serial.println(red);
+  Serial.println(r);
   Serial.print("Set G to: ");
-  Serial.println(green);
+  Serial.println(g);
   Serial.print("Set B to: ");
-  Serial.println(blue);
+  Serial.println(b);
 }

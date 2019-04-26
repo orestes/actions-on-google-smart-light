@@ -10,6 +10,10 @@
 #define WIFI_SSID "orestes_LTE"
 #define WIFI_PASSWORD "hell0wifi"
 
+// Firebase project
+#define PROJECT_URL "toy-home.firebaseio.com"
+
+
 // NeoPixel connection
 const int LED_STRIP_PIN = 2;
 const int LED_STRIP_COUNT = 1;
@@ -25,6 +29,7 @@ Adafruit_NeoPixel strip = Adafruit_NeoPixel(LED_STRIP_COUNT, LED_STRIP_PIN, NEO_
 
 void setup() {
   Serial.begin(9600);
+  strip.begin();
 
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   Serial.print("connecting");
@@ -36,7 +41,7 @@ void setup() {
   Serial.print("connected: ");
   Serial.println(WiFi.localIP());
 
-  Firebase.begin("toy-home.firebaseio.com");
+  Firebase.begin(PROJECT_URL);
   Firebase.stream("/devices/light-1/state"); // TODO: Use your device ID if you change it
 }
 

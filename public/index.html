@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Smart Home Provider :: Login</title>
+    <style>
+      textarea {
+        width: 100%;
+        min-height: 10em;
+        overflow-x: scroll;
+        margin: 2em;
+      }
+    </style>
+  </head>
+  <body>
+    <button id="login">Login</button>
+    <textarea id="debug"></textarea>
+    <script>
+      // Get references to DOM elements
+      const loginButton = document.querySelector("#login");
+      const debug = document.querySelector("#debug");
+
+      // Read query params
+      const url = new URL(window.location);
+
+      const redirect_uri = url.searchParams.get("redirect_uri");
+      const client_id = url.searchParams.get("client_id");
+      const response_type = url.searchParams.get("response_type");
+      const scope = url.searchParams.get("scope");
+      const state = url.searchParams.get("state");
+
+      // Show variables for debugging
+      debug.innerText = JSON.stringify(
+        {
+          redirect_uri,
+          client_id,
+          response_type,
+          scope,
+          state
+        },
+        null,
+        2
+      );
+
+      // Declare function
+      function getAuthCodeAndRedirect() {
+        // TODO: Authenticate the user and get a single-use auth code from our API
+        const auth_code = "fake-auth-code";
+
+        // Redirect the user back to Google, providing the new auth code for the original state
+        window.location = `${redirect_uri}?&state=${state}&code=${auth_code}`;
+      }
+
+      // Add event listeners
+      loginButton.addEventListener("click", getAuthCodeAndRedirect);
+    </script>
+  </body>
+</html>

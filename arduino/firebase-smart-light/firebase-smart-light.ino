@@ -1,9 +1,7 @@
-#include <FirebaseCloudMessaging.h>
-#include <Firebase.h>
-#include <FirebaseHttpClient.h>
-#include <FirebaseArduino.h>
 #include <FirebaseError.h>
 #include <FirebaseObject.h>
+
+#include <Adafruit_NeoPixel.h>
 
 #include <FirebaseArduino.h>
 #include <ESP8266WiFi.h>
@@ -13,8 +11,8 @@
 #define WIFI_PASSWORD "hell0wifi"
 
 // NeoPixel connection
-#define LED_STRIP_PIN = 2;
-#define LED_STRIP_COUNT = 1;
+const int LED_STRIP_PIN = 2;
+const int LED_STRIP_COUNT = 1;
 
 // State variables
 bool on = true;
@@ -70,7 +68,7 @@ void updateDataFromFirebase() {
   
   FirebaseObject event = Firebase.readEvent();
   String eventType = event.getString("type");
-  eventType.toLowerCase();
+  String path = event.getString("path");
 
   if (eventType == "") {
    Serial.println("discarded");
@@ -78,14 +76,12 @@ void updateDataFromFirebase() {
   }
 
   // Let's output some debugging data
-  Serial.print("event: ");
-  Serial.println(eventType);
-  
-  Serial.println("path: " + event.getString("path"));
+  Serial.println("event: " + eventType);
+  Serial.println("path: " + path);
   
   Serial.print("data: ");
-  JsonVariant variant = event.getJsonVariant("data");
-  variant.prettyPrintTo(Serial);
+  JsonVariant json = event.getJsonVariant("data");
+  json.prettyPrintTo(Serial);
 
   // We only care act on  put events
   if (eventType != "put") {
@@ -93,32 +89,32 @@ void updateDataFromFirebase() {
   }
 
   if (path == "/") {
-    setOn(data.on);
-    setBrightness(data.brightness);
-    setColor(data.color.rgb.r, data.color.rgb.g, data.color.rgb.b);
+    setOn(event.getBool("on"));
+    setBrightness(event.getInt("brightness"));
+    setColor(event.getInt("color/rgb/r"), event.getInt("color/rgb/g"), event.getInt("color/rgb/b"));
   }
 
-  if (path == "state/on") {
-    setOn(data.on);
+  if (path == "/on") {
+    setOn(event.getBool("on"));
   }
 
-  if (path == "state/brightness") {
-    setBrightness(data.brightness);
+  if (path == "brightness") {
+    setBrightness(event.getInt("brightness"));
   }
 
-  if (path == "state/color" || path == "state/color/rgb") {
-    setColor(data.color.rgb.r, data.color.rgb.g, data.color.rgb.b);
+  if (path == "color" || path == "color/rgb") {    
+    setColor(event.getInt("color/rgb/r"), event.getInt("color/rgb/g"), event.getInt("color/rgb/b"));
   }
 }
 
-void setOn(value) {
+void setOn(bool value) {
   on = value;
 }
-void setBrightness(value) {
+void setBrightness(int value) {
   i = map(value, 0, 100, 0, 255);
 }
-void setColor(red, green, blue) {
+void setColor(int red, int green, int blue) {
   r = constrain(red, 0, 255);
-  g = constrain(green, 0, 255),
-  b = constrain(blue, 0, 255)
+  g = constrain(green, 0, 255);
+  b = constrain(blue, 0, 255);
 }

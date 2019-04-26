@@ -82,39 +82,54 @@ void updateDataFromFirebase() {
   Serial.print("data: ");
   JsonVariant json = event.getJsonVariant("data");
   json.prettyPrintTo(Serial);
+  Serial.println("");
 
-  // We only care act on  put events
+  // We only act on  put events
   if (eventType != "put") {
     return;
   }
 
   if (path == "/") {
-    setOn(event.getBool("on"));
-    setBrightness(event.getInt("brightness"));
-    setColor(event.getInt("color/rgb/r"), event.getInt("color/rgb/g"), event.getInt("color/rgb/b"));
+    setOn(event.getBool("data/on"));
+    setBrightness(event.getInt("data/brightness"));
+    setColor(event.getInt("data/color/rgb/r"), event.getInt("data/color/rgb/g"), event.getInt("data/color/rgb/b"));
   }
 
   if (path == "/on") {
-    setOn(event.getBool("on"));
+    setOn(event.getBool("data"));
   }
 
-  if (path == "brightness") {
-    setBrightness(event.getInt("brightness"));
+  if (path == "/brightness") {
+    setBrightness(event.getInt("data"));
   }
 
-  if (path == "color" || path == "color/rgb") {    
-    setColor(event.getInt("color/rgb/r"), event.getInt("color/rgb/g"), event.getInt("color/rgb/b"));
+  if (path == "/color" || path == "color/rgb") {    
+    setColor(event.getInt("data/color/rgb/r"), event.getInt("data/color/rgb/g"), event.getInt("data/color/rgb/b"));
   }
 }
 
 void setOn(bool value) {
   on = value;
+  if (value) {
+    Serial.println("Turn light ON");
+  } else {
+    Serial.println("Turn light OFF");
+  }
 }
 void setBrightness(int value) {
   i = map(value, 0, 100, 0, 255);
+  Serial.print("Set brightness to: ");
+  Serial.println(value);
 }
 void setColor(int red, int green, int blue) {
   r = constrain(red, 0, 255);
   g = constrain(green, 0, 255);
   b = constrain(blue, 0, 255);
+
+  Serial.print("Set R to: ");
+  Serial.println(red);
+  Serial.print("Set G to: ");
+  Serial.println(green);
+  Serial.print("Set B to: ");
+  Serial.println(blue);
 }

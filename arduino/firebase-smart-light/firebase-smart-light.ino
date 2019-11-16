@@ -1,31 +1,19 @@
 //
-// Copyright 2015 Google Inc.
+// Copyright 2019 Orestes Carracedo https://orestes.io
 //
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-//
-
-// FirebaseDemo_ESP8266 is a sample that demo the different functions
-// of the FirebaseArduino API.
+// This work is licensed under the Creative Commons Attribution 4.0 International License.
+// To view a copy of this license, visit http://creativecommons.org/licenses/by/4.0/ or
+// send a letter to Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
 
 #include <ESP8266WiFi.h> // ESP8266 dependency
 #include <FirebaseESP8266.h> // Firebase dependency
 #include <Adafruit_NeoPixel.h> // NeoPixel dependency
 
 // Firebase Project
-#define FIREBASE_HOST "toy-home.firebaseio.com"
-#define FIREBASE_AUTH "HxfM3t6q9BAtuDjA2ON4CmLV2m3Os52uDkxeMDe7"
-#define WIFI_SSID "Orestes'"
-#define WIFI_PASSWORD "hell0wifi"
+#define FIREBASE_HOST "PROJECT ID GOES HERE.firebaseio.com"
+#define FIREBASE_AUTH "DATABASE SECRET GOES HERE"
+#define WIFI_SSID "WIFI SSID GOES HERE"
+#define WIFI_PASSWORD "WIFI PASSWORD GOES HERE"
 
 #define DEVICE_ID "light-1"
 

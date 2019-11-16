@@ -1,22 +1,37 @@
-#include <FirebaseError.h>
-#include <FirebaseObject.h>
+//
+// Copyright 2015 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
-#include <Adafruit_NeoPixel.h>
+// FirebaseDemo_ESP8266 is a sample that demo the different functions
+// of the FirebaseArduino API.
 
-#include <FirebaseArduino.h>
-#include <ESP8266WiFi.h>
+#include <ESP8266WiFi.h> // ESP8266 dependency
+#include <FirebaseESP8266.h> // Firebase dependency
+#include <Adafruit_NeoPixel.h> // NeoPixel dependency
 
-// Wi-fi access
-#define WIFI_SSID "orestes_LTE"
+// Firebase Project
+#define FIREBASE_HOST "toy-home.firebaseio.com"
+#define FIREBASE_AUTH "HxfM3t6q9BAtuDjA2ON4CmLV2m3Os52uDkxeMDe7"
+#define WIFI_SSID "Orestes'"
 #define WIFI_PASSWORD "hell0wifi"
 
-// Firebase project
-#define PROJECT_URL "toy-home.firebaseio.com"
-
+#define DEVICE_ID "light-1"
 
 // NeoPixel connection
-const int LED_STRIP_PIN = 2;
-const int LED_STRIP_COUNT = 1;
+const int LED_PIN = D4;
+const int LED_COUNT = 1;
 
 // State variables
 bool on = true;
@@ -25,32 +40,54 @@ int r = 255;
 int g = 0;
 int b = 0;
 
-Adafruit_NeoPixel strip = Adafruit_NeoPixel(LED_STRIP_COUNT, LED_STRIP_PIN, NEO_GRB + NEO_KHZ800);
+// Firebase Data API
+FirebaseData firebaseData;
+FirebaseJson json;
 
-void setup() {
-  Serial.begin(9600);
+// NeoPixel API
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
+
+void setup()
+{
+  Serial.begin(115200);
+  Serial.println("");
+  
   strip.begin();
 
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  Serial.print("connecting");
+  Serial.print("Connecting to Wi-Fi");
   while (WiFi.status() != WL_CONNECTED) {
     Serial.print(".");
     delay(1000);
   }
   Serial.println();
-  Serial.print("connected: ");
+  Serial.print("Connected: ");
   Serial.println(WiFi.localIP());
+  
+  Serial.print("Connecting to Firebase: ");
+  Serial.println(FIREBASE_HOST);
 
-  Firebase.begin(PROJECT_URL);
-  Firebase.stream("/devices/light-1/state"); // TODO: Use your device ID if you change it
+  Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
+  Firebase.reconnectWiFi(true);
+
+  if (!Firebase.beginStream(firebaseData, "/devices/" + String(DEVICE_ID) + "/state"))
+  {
+      Serial.println("Could not begin stream");
+      Serial.println("REASON: " + firebaseData.errorReason());
+      Serial.println();
+  }
 }
 
 void loop() {
-  if (Firebase.failed()) {
-    Serial.println("streaming error");
-    Serial.println(Firebase.error());
+  if (!Firebase.readStream(firebaseData)) {
+    Serial.println("Can't read stream data");
+    Serial.println("REASON: " + firebaseData.errorReason());
+    delay(1000);
+  }
 
-    Serial.println(Firebase.error());
+  if (firebaseData.streamTimeout()) {
+    Serial.println();
+    Serial.println("Stream timeout, will resume streaming...");
   }
 
   updateDataFromFirebase();
@@ -61,55 +98,101 @@ void loop() {
   } else {
     strip.setBrightness(0);
     strip.setPixelColor(0, strip.Color(0, 0, 0));  
+    strip.clear();
   }
   
   strip.show();
 }
 
 void updateDataFromFirebase() {
-  if (!Firebase.available()) {
+  if (!firebaseData.streamAvailable()) {
     return;
   }
   
-  FirebaseObject event = Firebase.readEvent();
-  String eventType = event.getString("type");
-  String path = event.getString("path");
+  Serial.println("Stream Data...");
+  Serial.println(firebaseData.streamPath());
+  Serial.println(firebaseData.dataPath());
+  Serial.println(firebaseData.dataType());
 
-  if (eventType == "") {
-   Serial.println("discarded");
-   return;
-  }
-
-  // Let's output some debugging data
-  Serial.println("event: " + eventType);
-  Serial.println("path: " + path);
-  
-  Serial.print("data: ");
-  JsonVariant json = event.getJsonVariant("data");
-  json.prettyPrintTo(Serial);
-  Serial.println("");
-
-  // We only act on  put events
-  if (eventType != "put") {
-    return;
-  }
+ if (firebaseData.dataType() == "int")
+    Serial.println(firebaseData.intData());
+  else if (firebaseData.dataType() == "float")
+    Serial.println(firebaseData.floatData(), 5);
+  else if (firebaseData.dataType() == "double")
+    printf("%.9lf\n", firebaseData.doubleData());
+  else if (firebaseData.dataType() == "boolean")
+    Serial.println(firebaseData.boolData() == 1 ? "true" : "false");
+  else if (firebaseData.dataType() == "string")
+    Serial.println(firebaseData.stringData());
+  else if (firebaseData.dataType() == "json")
+    Serial.println(firebaseData.jsonString());
+    
+  const String path = firebaseData.dataPath();
 
   if (path == "/") {
-    setOn(event.getBool("data/on"));
-    setBrightness(event.getInt("data/brightness"));
-    setColor(event.getInt("data/color/rgb/r"), event.getInt("data/color/rgb/g"), event.getInt("data/color/rgb/b"));
+    FirebaseJson &json = firebaseData.jsonObject();
+    FirebaseJsonData data;
+    
+    json.get(data, "on");
+    if (data.success && data.type == "bool")
+      setOn(data.boolValue); 
+
+    json.get(data, "brightness");
+    if (data.success && data.type == "int")
+      setBrightness(data.intValue);
+
+    int tmpR;
+    int tmpG;
+    int tmpB;
+    
+    json.get(data, "color/rgb/r");
+    if (data.success && data.type == "int")
+      tmpR = data.intValue;
+    
+    json.get(data, "color/rgb/g");
+    if (data.success && data.type == "int")
+      tmpG = data.intValue;
+    
+    json.get(data, "color/rgb/b");
+    if (data.success && data.type == "int")
+      tmpB = data.intValue;
+    
+    setColor(tmpR, tmpG, tmpB);
+    return;
   }
 
   if (path == "/on") {
-    setOn(event.getBool("data"));
+    setOn(firebaseData.boolData());
+    return;
   }
 
   if (path == "/brightness") {
-    setBrightness(event.getInt("data"));
+    setBrightness(firebaseData.intData());
+    return;
   }
 
   if (path == "/color") {    
-    setColor(event.getInt("data/rgb/r"), event.getInt("data/rgb/g"), event.getInt("data/rgb/b"));
+    FirebaseJson &json = firebaseData.jsonObject();
+    FirebaseJsonData data;
+    
+    int tmpR;
+    int tmpG;
+    int tmpB;
+    
+    json.get(data, "rgb/r");
+    if (data.success && data.type == "int")
+      tmpR = data.intValue;
+    
+    json.get(data, "rgb/g");
+    if (data.success && data.type == "int")
+      tmpG = data.intValue;
+    
+    json.get(data, "rgb/b");
+    if (data.success && data.type == "int")
+      tmpB = data.intValue;
+    
+    setColor(tmpR, tmpG, tmpB);
+    return;
   }
 }
 
@@ -126,6 +209,7 @@ void setBrightness(int value) {
   Serial.print("Set brightness to: ");
   Serial.println(i);
 }
+
 void setColor(int red, int green, int blue) {
   r = constrain(red, 0, 255);
   g = constrain(green, 0, 255);
